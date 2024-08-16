@@ -38,11 +38,25 @@ const Persons = (props) => (
   </div>
 )
 
+const Message = (props) => {
+  if (props.message === null) {
+    return null
+  }
+  
+  return(
+  <div className={props.class}>
+    {props.message}
+  </div>
+  )
+}
+
 const App = () => {
   const [persons, setPersons] = useState([]) 
   const [newName, setNewName] = useState('')
   const [newNumber, setNewNumber] = useState('')
   const [nameFilter, setNameFilter] = useState('')
+  const [message, setMessage] = useState()
+  const [messageClass, setMessageClass] = useState('')
 
   useEffect(() => {
     personService
@@ -65,6 +79,8 @@ const App = () => {
     setNameFilter(event.target.value)
   }
 
+  const messageShownSeconds = 3000;
+
   const addPerson = (event) => {
     event.preventDefault()
     const personObject = {
@@ -79,6 +95,12 @@ const App = () => {
         personService
           .update(id, changedPerson)
           .then(returnedPerson => {
+            setMessageClass('success-message')
+            setMessage(`${returnedPerson.name} updated`)
+            setTimeout(() => {
+                setMessage(null)
+                setMessageClass('')
+            }, messageShownSeconds)
             setPersons(personsToShow.map(p => p.id !== id ? p : returnedPerson))
             setNewName('')
             setNewNumber('')
@@ -88,6 +110,12 @@ const App = () => {
       personService
         .create(personObject)
         .then(returnedPerson => {
+            setMessageClass('success-message')
+            setMessage(`${returnedPerson.name} added`)
+            setTimeout(() => {
+              setMessage(null)
+              setMessageClass('')
+            }, messageShownSeconds)
             setPersons(persons.concat(returnedPerson))
             setNewName('')
             setNewNumber('')
@@ -101,8 +129,23 @@ const App = () => {
     if(window.confirm(`Delete ${person.name}?`)){
       personService
         .remove(id)
-        .then(response => {
+        .then(returnedPerson => {
+          setMessageClass('success-message')
+          setMessage(`${returnedPerson.name} removed`)
+          setTimeout(() => {
+            setMessage(null)
+            setMessageClass('')
+          }, messageShownSeconds)
           setPersons(personsToShow.filter(person => person.id !== id))
+        })
+        .catch(error => {
+          setMessageClass('error-message')
+          setMessage(`Information of ${person.name} has already been removed from server`)
+          setTimeout(() => {
+            setMessage(null)
+            setMessageClass('')
+          }, messageShownSeconds)
+          setPersons(personsToShow.filter(p => p.id !== id))
         })
     }
   }
@@ -112,6 +155,7 @@ const App = () => {
   return (
     <div>
       <h2>Phonebook</h2>
+      <Message message={message} class={messageClass} />
       <Filter filterValue={nameFilter} handleFilterChange={handleFilterChange} />
       
       <h2>Add new</h2>
